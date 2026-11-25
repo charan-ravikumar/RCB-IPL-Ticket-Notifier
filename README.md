@@ -17,7 +17,11 @@
 
 ---
 
-IPL tickets can sell out quickly. This script keeps an eye on the [RCB ticket page](https://shop.royalchallengers.com/ticket) for you and sends a burst of alerts as soon as the text you are waiting for appears.
+> [!NOTE]
+> **💸 Everything in this repo is free. No credit card or paid subscription is needed to download, set up or try it.**
+> Alerts go through [Twilio's free trial](#2-set-up-twilio-free-trial-available), which has [limits](#free-trial-limits) you should know about before relying on it.
+
+IPL tickets can sell out quickly. This script keeps an eye on the [RCB ticket page](https://shop.royalchallengers.com/ticket) for you and sends a burst of alerts as soon as the tickets you are waiting for appears.
 
 ## ✨ Features
 
@@ -36,7 +40,8 @@ IPL tickets can sell out quickly. This script keeps an eye on the [RCB ticket pa
 
 - Python 3.9 or newer
 - Google Chrome (Selenium 4 downloads the matching ChromeDriver automatically)
-- A [Twilio](https://www.twilio.com/) account with an SMS-capable number
+- A [Twilio](https://www.twilio.com/try-twilio) account (the free trial works for getting started)
+- A computer that [stays on](#-keep-it-running), or a cloud server
 
 ### 1. Clone and install
 
@@ -49,19 +54,70 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Set up Twilio
+### 2. Set up Twilio (free trial available)
 
-1. Copy your **Account SID** and **Auth Token** from the Twilio Console.
-2. Get a Twilio phone number for SMS. Trial accounts can only message verified numbers.
-3. *(Optional, for WhatsApp)* Join the [WhatsApp Sandbox](https://www.twilio.com/docs/whatsapp/sandbox) from the recipient's phone, and note the **Content SID** of a template that has a single variable, `{{1}}`.
+🆓 **Twilio offers a free trial, and signing up needs no credit card.**
 
-### 3. Configure
+1. [Sign up](https://www.twilio.com/try-twilio) and verify your email and phone number.
+2. Copy your **Account SID** and **Auth Token** from the Twilio Console.
+3. Note the Twilio number to send SMS from.
+4. Verify every phone number that should receive alerts. Your sign-up number is already verified.
+5. *(Optional, for WhatsApp)* Join the [WhatsApp Sandbox](https://www.twilio.com/docs/whatsapp/sandbox) from the recipient's phone, and note the **Content SID** of a template that has a single variable, `{{1}}`.
+
+#### Free trial limits
+
+As listed in [Twilio's trial documentation](https://www.twilio.com/docs/usage/trials) in November 2026. Check it for current terms.
+
+| Limit | Free trial |
+|---|---|
+| Duration | 30 days |
+| Messages | 100 SMS and 100 WhatsApp |
+| Recipients | Up to 5 verified numbers; SMS only within your sign-up country |
+| Message text | Twilio's pre-defined templates only |
+
+> [!WARNING]
+> This bot writes its own SMS text, so a trial account may reject its SMS alerts. WhatsApp alerts need a template that your trial allows. Check the terminal for `✅ ... sent` or `❌ ... failed` when the bot starts, and confirm the message reaches your phone. Custom messages require an upgraded (paid) Twilio account, which is optional and your choice.
+
+### 3. Fill in the required values
+
+Create your private settings file:
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and fill in your values.
+Open `.env` and replace the placeholders. **These values are required:**
+
+| Value | Where to get it |
+|---|---|
+| `TRIGGER_TEXTS` | Text that will appear on the ticket page when your match goes on sale |
+| `RECIPIENT_1_PHONE` | The number to alert, with country code |
+| `RECIPIENT_1_ACCOUNT_SID` | Twilio Console |
+| `RECIPIENT_1_AUTH_TOKEN` | Twilio Console |
+| `RECIPIENT_1_SMS_FROM` | Your Twilio number |
+
+Also set `MATCH_NAME` and check `HEALTH_CHECKS` for your match.
+
+#### 📝 Example: RCB vs CSK on 5 April 2026
+
+```ini
+# What to watch
+MATCH_NAME="RCB vs CSK (Apr 5)"
+TRIGGER_TEXTS="SUN, APR 5|APRIL 5, 2026|CHENNAI SUPER KINGS"
+HEALTH_CHECKS="BUY TICKETS|TICKETS NOT AVAILABLE"
+
+# Who to alert (all values below are made up)
+RECIPIENT_1_PHONE=+919876543210
+RECIPIENT_1_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RECIPIENT_1_AUTH_TOKEN=your_auth_token_here
+RECIPIENT_1_SMS_FROM=+15551234567
+
+# Optional: WhatsApp
+RECIPIENT_1_WA_CONTENT_SID=HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RECIPIENT_1_WA_FROM=+14155238886
+```
+
+For another match, change the name, date and opponent. Separate multiple texts with `|`. Any **one** trigger is enough to fire the alert.
 
 ### 4. Run
 
@@ -69,7 +125,20 @@ Open `.env` and fill in your values.
 python rcb_ticket_notifier.py
 ```
 
-You should receive a "started" message. Keep the terminal open and the computer awake. Press `Ctrl+C` to stop.
+A "started" message is sent to each recipient. Press `Ctrl+C` to stop.
+
+## 🔁 Keep it running
+
+> [!IMPORTANT]
+> **The bot only works while the script is running.** Your laptop or computer must stay on, awake and connected to the internet the whole time. If it sleeps, shuts down or goes offline, checks stop and you can miss the tickets.
+
+- **On your own computer:** turn off automatic sleep and keep it plugged in. On macOS, this keeps it awake while the bot runs:
+
+  ```bash
+  caffeinate -i python rcb_ticket_notifier.py
+  ```
+
+- **On a cloud service:** you can instead deploy it to any cloud server that runs Python and Chrome, such as AWS, Google Cloud, Azure or Oracle Cloud. Use `tmux`, `systemd` or similar so it keeps running after you disconnect. Cloud providers set their own terms, and many ask for a credit card or charge for usage, even where a free tier exists.
 
 ## ⚙️ Configuration
 
@@ -170,7 +239,7 @@ python find_api_endpoints.py
 ## ⚠️ Good to know
 
 - Detection depends on the page's wording, so a site redesign can break it.
-- Twilio charges for messages. With two recipients on SMS and WhatsApp, one burst is 40 messages.
+- Alerts use up Twilio message units. With two recipients on SMS and WhatsApp, one burst is 40 messages, and paid accounts are charged once free units run out.
 - This script only notifies you. It does not book tickets.
 - Check the website's terms of use and keep the polling interval reasonable.
 
