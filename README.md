@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎟️ RCB Ticket Notifier
+# 🎟️ RCB IPL Ticket Notifier
 
 **Get an SMS and WhatsApp alert when Royal Challengers Bengaluru tickets go live.**
 
